@@ -1,0 +1,68 @@
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+import time
+from docx import Document
+from docx.shared import Inches
+from datetime import datetime
+
+# -----------------------------
+# Test Cases
+test_cases = [
+    {"username": "tomsmith", "password": "SuperSecretPassword!"},  # Valid
+    {"username": "invaliduser", "password": "wrongpass"}           # Invalid
+]
+
+url = "https://the-internet.herokuapp.com/login"
+chromedriver_path = r"C:\Users\sayed\Downloads\ChromeSetup.exe"  # Change path
+# -----------------------------
+
+# Create Word document
+doc = Document()
+doc.add_heading("CODTECH Software Testing Internship", 0)
+doc.add_heading("Task 1: Automate Login Functionality (Multiple Test Cases)", level=1)
+doc.add_paragraph(f"Test Website: {url}")
+doc.add_paragraph(f"Report Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+# Launch browser
+driver = webdriver.Chrome(executable_path=chromedriver_path)
+driver.maximize_window()
+
+# Loop through test cases
+for i, case in enumerate(test_cases, start=1):
+    driver.get(url)
+    time.sleep(2)
+    
+    # Enter credentials
+    driver.find_element(By.ID, "username").send_keys(case["username"])
+    driver.find_element(By.ID, "password").send_keys(case["password"])
+    driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
+    time.sleep(2)
+    
+    # Verify login
+    message_element = driver.find_element(By.ID, "flash")
+    if "You logged into a secure area!" in message_element.text:
+        result = "Login successful ✅"
+    else:
+        result = "Login failed ❌"
+    
+    print(f"Test Case {i}: {result}")
+    
+    # Add to Word
+    doc.add_heading(f"Test Case {i}", level=2)
+    doc.add_paragraph(f"Username: {case['username']}")
+    doc.add_paragraph(f"Password: {case['password']}")
+    doc.add_paragraph(f"Result: {result}")
+    doc.add_paragraph(f"Actual Message: {message_element.text.strip()}")
+    
+    # Take screenshot
+    screenshot_path = f"screenshot_{i}.png"
+    driver.save_screenshot(screenshot_path)
+    doc.add_picture(screenshot_path, width=Inches(5))
+    doc.add_paragraph("\n")  # Space between test cases
+
+# Close browser
+driver.quit()
+
+# Save Word document
+doc.save("Login_MultiTest_Report.docx")
+print("Report saved as Login_MultiTest_Report.docx")
